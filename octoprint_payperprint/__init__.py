@@ -12,6 +12,9 @@ class PayPerPrint(octoprint.plugin.TemplatePlugin,
                               octoprint.plugin.EventHandlerPlugin,
                               octoprint.plugin.SettingsPlugin,
                               octoprint.plugin.StartupPlugin):
+    filenameG = "";
+    targetG = "";
+    sdG = "";
 
     def on_event(self, event, payload):
         if event != "Upload":
@@ -23,12 +26,17 @@ class PayPerPrint(octoprint.plugin.TemplatePlugin,
                 filename = payload["file"]
                 target = payload["target"]
                 
+                filenameG = filename
+                targetG = target
+                
                 if target == FileDestinations.SDCARD:
                     path = filename
                         sd = True
+                        sdG = sd
                 else:
                     path = self._file_manager.path_on_disk(target, filename)
                         sd = False
+                        sdG = sd
                 
                 self._logger.info("Selecting {} on {} that was just uploaded".format(filename, target))
                 if payment():
@@ -36,14 +44,19 @@ class PayPerPrint(octoprint.plugin.TemplatePlugin,
                 else:
                     self.logger.info("You have to pay before youo print!")
                     return
-    
+        #DA TESTARE
         if event != Events.PRINT_DONE:
-                return
+            return
         else:
-                #CANCELLARE FILE SD
+            remove_file(self, filenameG, targetG)
 
     def payment():
         #CALCOLO COSTO + COMPARIRE FORM PAYPAL
+        
+    def remove_file(self, destination, path):
+        #DA TESTARE
+        self._storage(destination).remove_file(path)
+        eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 
 def __plugin_load__():
